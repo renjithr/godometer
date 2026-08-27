@@ -701,8 +701,7 @@ function wireCompare() {
   document.getElementById("backBtn2").addEventListener("click", back, { signal: on });
   app.addEventListener("click", e => {
     const gt = e.target.closest("[data-goto]");
-    if (gt) { go("/"); setTimeout(() => document.getElementById(gt.dataset.goto)
-      ?.scrollIntoView({ behavior: "smooth" }), 80); return; }
+    if (gt) { go("/"); setTimeout(() => scrollToEl(document.getElementById(gt.dataset.goto)), 80); return; }
     const hit = e.target.closest("[data-slug]");
     if (hit) go(`/tradition/${hit.dataset.slug}`);
   }, { signal: on });
@@ -1047,16 +1046,11 @@ function wireTradition() {
     const va = e.target.closest("[data-value-axis]");
     if (va) return go(`/?value=${va.dataset.valueAxis}`);
     const gt = e.target.closest("[data-goto]");
-    if (gt) { go("/"); setTimeout(() => document.getElementById(gt.dataset.goto)
-      ?.scrollIntoView({ behavior: "smooth" }), 80); return; }
+    if (gt) { go("/"); setTimeout(() => scrollToEl(document.getElementById(gt.dataset.goto)), 80); return; }
     const hit = e.target.closest("[data-slug]");
     if (hit) go(`/tradition/${hit.dataset.slug}`);
   }, { signal: on });
 
-  const { params } = parseRoute();
-  const v = params.get("v");
-  if (v) setTimeout(() => document.getElementById(`v-${v}`)
-    ?.scrollIntoView({ behavior: "smooth", block: "center" }), 120);
 }
 
 /* ------------------------------- reveals -------------------------------- */
@@ -1095,7 +1089,7 @@ document.addEventListener("click", e => {
   if (!nav) return;
   e.preventDefault();
   const target = nav.dataset.nav;
-  const jump = () => document.getElementById(target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  const jump = () => scrollToEl(document.getElementById(target));
   if (parseRoute().path === "/") jump();
   else { go("/"); setTimeout(jump, 90); }
 });
