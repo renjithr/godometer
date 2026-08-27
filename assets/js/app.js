@@ -41,6 +41,13 @@ function parseRoute() {
 
 function go(hash) { location.hash = hash; }
 
+/** Scroll an element under the sticky bar; honours prefers-reduced-motion. */
+function scrollToEl(el) {
+  if (!el) return;
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.scrollIntoView({ behavior: still ? "auto" : "smooth", block: "start" });
+}
+
 function render() {
   const { path, params } = parseRoute();
   const m = path.match(/^\/tradition\/([a-z]+)/);
@@ -173,6 +180,9 @@ function viewHome() {
   <!-- --------------------------------------------------------- RESULTS -->
   <section class="sec sec--tight" id="results">
     <div class="wrap">
+      <div class="result-nav" id="resultNav" hidden>
+        <button type="button" data-scroll="console">&uarr; Change selection</button>
+      </div>
       <div class="panel panel--cut result" id="result"></div>
     </div>
   </section>
@@ -717,12 +727,21 @@ function wireHome(params) {
        some browsers refuse it on file:// URLs, where the route simply stays put. */
     try { history.replaceState(null, "", `#/${q}`); } catch (_) { /* file:// */ }
     returnTo = `/${q}`;
-    if (scroll) document.getElementById("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    document.getElementById("resultNav").hidden = !(a || v);
+    if (scroll) scrollToEl(result);
   }
 
   const on = listeners.signal;
-  axisSel.addEventListener("change", () => { if (axisSel.value) valueSel.value = ""; sync(false); }, { signal: on });
-  valueSel.addEventListener("change", () => { if (valueSel.value) axisSel.value = ""; sync(false); }, { signal: on });
+  /* a fresh selection scrolls the reading into view — otherwise it lands
+     below the fold and the reader has no idea anything happened */
+  axisSel.addEventListener("change", () => {
+    if (axisSel.value) valueSel.value = "";
+    sync(Boolean(axisSel.value));
+  }, { signal: on });
+  valueSel.addEventListener("change", () => {
+    if (valueSel.value) axisSel.value = "";
+    sync(Boolean(valueSel.value));
+  }, { signal: on });
 
   /* ---- comparison picker: 2 to 5 traditions, then Go ------------------- */
   const pick = document.getElementById("cmpPick");
@@ -764,8 +783,14 @@ function wireHome(params) {
   if (a0 && (a0 === ALL || AXIS_BY_ID[a0])) axisSel.value = a0;
   else if (v0 && (v0 === ALL || VALUE_BY_KEY[v0])) valueSel.value = v0;
   sync(false);
-  if (a0 || v0) setTimeout(() => document.getElementById("results")
-    .scrollIntoView({ behavior: "smooth", block: "start" }), 60);
+  /* On a deep link the browser does its own scroll handling as the page
+     finishes loading, which cancels an early programmatic scroll — so wait
+     for load before jumping to the reading. */
+  if (a0 || v0) {
+    const jump = () => setTimeout(() => scrollToEl(document.getElementById("result")), 80);
+    if (document.readyState === "complete") jump();
+    else window.addEventListener("load", jump, { once: true });
+  }
 
   app.addEventListener("click", e => {
     const preset = e.target.closest("[data-preset]");
@@ -777,7 +802,7 @@ function wireHome(params) {
       return;
     }
     const scroll = e.target.closest("[data-scroll]");
-    if (scroll) { document.getElementById(scroll.dataset.scroll).scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    if (scroll) { scrollToEl(document.getElementById(scroll.dataset.scroll)); return; }
     const hit = e.target.closest("[data-slug]");
     if (hit) go(`/tradition/${hit.dataset.slug}${hit.dataset.value ? `?v=${hit.dataset.value}` : ""}`);
   }, { signal: on });
@@ -1061,6 +1086,9 @@ window.addEventListener("scroll", queueCheck, { passive: true });
 window.addEventListener("resize", queueCheck, { passive: true });
 
 /* --------------------------------- boot --------------------------------- */
+/* The router owns scroll position; stop the browser restoring its own. */
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
 /* Chrome nav lives outside #app, so its handler is installed once. */
 document.addEventListener("click", e => {
   const nav = e.target.closest("[data-nav]");

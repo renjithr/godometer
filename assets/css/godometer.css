@@ -328,7 +328,21 @@ option { background: var(--surface-2); color: var(--ink); }
 
 /* results panel */
 .sec--tight { padding-block: clamp(1.4rem, .9rem + 1.8vw, 2.6rem); }
-.result { min-height: 360px; scroll-margin-top: 80px; }
+.result { min-height: 360px; }
+
+/* every in-page jump clears the sticky bar */
+.sec, .deck, .result { scroll-margin-top: 84px; }
+
+/* jump back up to the selectors once the reading has scrolled them away */
+.result-nav { display: flex; justify-content: flex-end; margin-bottom: .75rem; }
+.result-nav[hidden] { display: none; }
+.result-nav button {
+  font-family: var(--font-mono); font-size: var(--t-micro); letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-3);
+  border: 1px solid var(--line); border-radius: 100px; padding: .45rem .95rem;
+  transition: all .25s var(--ease);
+}
+.result-nav button:hover { color: var(--teal); border-color: var(--teal); background: rgba(16,217,163,.06); }
 .result__head { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: flex-start; margin-bottom: 1.4rem; }
 .result__q { font-size: var(--t-h3); max-width: 46ch; }
 .result__sub { font-size: var(--t-small); color: var(--ink-3); margin-top: .4rem; }
